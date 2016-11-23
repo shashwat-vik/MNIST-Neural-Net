@@ -8,9 +8,9 @@ class Neural_Network:
         self.num_layers = len(sizes)
 
     def conscious_reply(self, a):
-            for b,w in zip(self.biases, self.weights):
-                a = sigmoid(np.dot(w,a)+b)
-            return a
+        for b,w in zip(self.biases, self.weights):
+            a = sigmoid(np.dot(w,a)+b)
+        return a
 
     def SGD(self, train_data, epochs, mini_batch_size, etl, test_data):
         if test_data: n_test = len(test_data)
