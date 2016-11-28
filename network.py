@@ -1,55 +1,52 @@
 import numpy as np
+from loader import Loader
 
-class Neural_Network:
-    def __init__(self, sizes):
+class Neural_Net:
+    def __init__(self, sizes, eta, mini_batch_size, epochs):
         self.sizes = sizes
-        self.biases = [np.random.randn(x,1) for x in sizes[1:]]
-        self.weights = [np.random.randn(y,x) for x,y in zip(sizes[:-1], sizes[1:])]
         self.num_layers = len(sizes)
+        self.biases = [np.random.randn(x,1) for x in sizes[1:]]
+        self.weights = [np.random.randn(y, x) for x,y in zip(sizes[:-1], sizes[1:])]
+        self.train_data, self.val_data ,self.test_data = Loader().getData()
+        self.SGD(eta, mini_batch_size, epochs)
 
-    def conscious_reply(self, a):
-        for b,w in zip(self.biases, self.weights):
-            a = sigmoid(np.dot(w,a)+b)
-        return a
-
-    def SGD(self, train_data, epochs, mini_batch_size, etl, test_data):
-        if test_data: n_test = len(test_data)
-        n = len(train_data)
+    def SGD(self, eta, mini_batch_size, epochs):
+        n = len(self.train_data)
+        n_test = len(self.test_data)
         for j in range(epochs):
+            np.random.shuffle(self.train_data)
+            mini_batches = [self.train_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
+
             # TRAIN
-            np.random.shuffle(train_data)
-            mini_batches = [train_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
             for mini_batch in mini_batches:
-                self.update_mini_batch(mini_batch, etl)
+                self.updateMiniBatch(mini_batch, eta)
 
             # EVALUATE
-            if test_data:
-                print ("Epoch {0}/{1} : {2}/{3}".format(j,epochs,self.evaluate(test_data),n_test))
+            print ("{0}/{1} : {2}/{3}".format(j,epochs,self.evaluate(),n_test))
 
-    def update_mini_batch(self, mini_batch, etl):
+    def updateMiniBatch(self, mini_batch, eta):
         m = len(mini_batch)
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
-
-        for x,y in mini_batch:
-            delta_nabla_b, delta_nabla_w = self.backpropogate(x,y)
+        for x, y in mini_batch:
+            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
             nabla_b = [nb+dnb for nb,dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw+dnw for nw,dnw in zip(nabla_w, delta_nabla_w)]
-        self.biases = [b-(etl/m)*nb for b,nb in zip(self.biases, nabla_b)]
-        self.weights = [w-(etl/m)*nw for w,nw in zip(self.weights, nabla_w)]
+        self.biases = [b-(eta/m)*nb for b,nb in zip(self.biases, nabla_b)]
+        self.weights = [w-(eta/m)*nw for w,nw in zip(self.weights, nabla_w)]
 
-    def backpropogate(self, x, y):
-        # RIPPLE-FORWARD
+    def backprop(self, x, y):
+        # FEED-FORWARD
         activation = x
         activations = [x]
         zs = []
         for b,w in zip(self.biases, self.weights):
-            z = np.dot(w,activation)+b
+            z = np.dot(w, activation) + b
             zs.append(z)
             activation = sigmoid(z)
             activations.append(activation)
 
-        # BACK_PASS
+        # BACK-PROP
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
 
@@ -64,20 +61,25 @@ class Neural_Network:
             nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
         return (nabla_b, nabla_w)
 
-    def cost_derivative(self, output_activations, y):
-        return (output_activations-y)
+    def cost_derivative(self, output_activation, y):
+        return (output_activation-y)
 
-    def evaluate(self, test_data):
-        test_results = [(np.argmax(self.conscious_reply(pic)),label) for pic,label in test_data]
-        return sum(int(reply==label) for reply,label in test_results)
+    def evaluate(self):
+        test_result = [(np.argmax(self.feedForward(img)),label) for img,label in self.test_data]
+        return sum(int(a == y) for a,y in test_result)
 
-###################
-# UTILITY FUNCTIONS
+    def feedForward(self, a):
+        for b,w in zip(self.biases, self.weights):
+            a = sigmoid(np.dot(w,a)+b)
+        return a
 
 def sigmoid(z):
-    return 1/(1.0+np.exp(-z))
+    return 1/(1+np.exp(-z))
 
 def sigmoid_prime(z):
-    return sigmoid(z)*(1.0-sigmoid(z))
+    return sigmoid(z)*(1-sigmoid(z))
 
-###################
+
+if __name__ == '__main__':
+    sizes = [784, 30, 10]
+    net = Neural_Net(sizes, 3.0, 10, 30)
