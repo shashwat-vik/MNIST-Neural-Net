@@ -18,10 +18,7 @@ class Loader:
 
 
 def reshape_images_vector(images):
-    reshaped = []
-    for image in images:
-        reshaped.append(np.reshape(image, (784,1)))
-    return reshaped
+    return [np.reshape(image, (784,1)) for image in images]
 
 def vectorize_labels(labels):
     vectored = []
