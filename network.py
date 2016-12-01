@@ -15,8 +15,8 @@ class Graph(QWidget):
 
     def initUI(self):
         self.layout = QHBoxLayout(self)
-        self.plot1 = pg.PlotWidget(title='ACCURACY')
-        self.plot2 = pg.PlotWidget(title='COST')
+        self.plot1 = pg.PlotWidget(title='TEST ACCURACY')
+        self.plot2 = pg.PlotWidget(title='TRAIN COST')
         self.layout.addWidget(self.plot1)
         self.layout.addWidget(self.plot2)
 
@@ -156,9 +156,12 @@ class Neural_Net(QThread):
         mse = lambda res,lab,n: (((res-lab)**2)/(2*n))  # MEAN-SQUARED ERROR
         test_results = [(np.argmax(self.feedForward(img)),label)
                         for img,label in self.test_data]
-        n = len(test_results)
+
+        n = len(self.train_data)
+        train_cost = [mse(np.argmax(self.feedForward(img)), np.argmax(label), n)
+                      for img,label in self.train_data]
         return (sum(int(response == label) for response, label in test_results),
-                sum(mse(response,label,n) for response, label in test_results))
+                sum(train_cost))
 
     def feedForward(self, a):
         for b,w in zip(self.biases, self.weights):
